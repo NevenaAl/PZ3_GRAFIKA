@@ -11,6 +11,7 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Media.Media3D;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Xml;
@@ -32,10 +33,11 @@ namespace _3DNetwork
             InitializeComponent();
             dictionaryNodes = new Dictionary<long, Tuple<string, object>>();
             dictionaryLines = new Dictionary<long, LineEntity>();
-            Matrix = new long[300, 200];
+            Matrix = new long[200, 200];
            
             LoadXml();
             FindMinMax(out minX, out maxX, out minY, out maxY);
+            DrawNodes();
             
         }
         private void LoadXml()
@@ -123,6 +125,108 @@ namespace _3DNetwork
             }
 
         }
+        private void DrawNodes()
+        {
+            foreach (var el in dictionaryNodes.Values)
+            {
+
+                if (el.Item1.Equals("substation"))
+                {
+                    SubstationEntity subEntity = (SubstationEntity)el.Item2;
+
+                    GeometryModel3D myGeometryModel = new GeometryModel3D();
+                    MeshGeometry3D myMeshGeometry3D = new MeshGeometry3D();
+
+                    Point3DCollection myPositionCollection = new Point3DCollection();
+                    myPositionCollection.Add(new Point3D(0,0,0));
+                    myPositionCollection.Add(new Point3D(0.01,0,0));
+                    myPositionCollection.Add(new Point3D(0, 0.01, 0));
+                    myPositionCollection.Add(new Point3D(0.01, 0.01, 0));
+                    myPositionCollection.Add(new Point3D(0,0, 0.01));
+                    myPositionCollection.Add(new Point3D(0.01, 0, 0.01));
+                    myPositionCollection.Add(new Point3D(0, 0.01, 0.01));
+                    myPositionCollection.Add(new Point3D(0.01, 0.01, 0.01));
+
+                    myMeshGeometry3D.Positions = myPositionCollection;
+
+                    Int32Collection myTriangleIndicesCollection = new Int32Collection();
+                    Int32[] indices ={ 2, 3, 1, 3, 1, 0, 7, 1, 3, 7, 5, 1, 6, 5, 7, 6, 4, 5, 6, 2, 0, 2, 0, 4, 2, 7, 3, 2, 6, 7, 0, 1, 5, 0, 5, 4 };
+                    foreach (var i in indices)
+                    {
+                        myTriangleIndicesCollection.Add(i);
+                    }
+                    myMeshGeometry3D.TriangleIndices = myTriangleIndicesCollection;
+
+
+                    DiffuseMaterial myMaterial = new DiffuseMaterial(){ Brush = Brushes.Red};
+                    myGeometryModel.Material = myMaterial;
+                    myGeometryModel.Geometry = myMeshGeometry3D;
+
+                    ToolTip toolTip = new ToolTip();
+                    toolTip.Content = "Substation\nID: " + subEntity.Id + "  Name: " + subEntity.Name;
+                    toolTip.Background = Brushes.Black;
+                    toolTip.Foreground = Brushes.White;
+                    toolTip.Padding = new Thickness(10);
+
+                
+                    MyModel3DGroup.Children.Add(myGeometryModel);
+                    
+
+
+                }
+                //if (el.Item1.Equals("switch"))
+                //{
+                //    SwitchEntity switchEntity = (SwitchEntity)el.Item2;
+                //    Rectangle myRectangle = new Rectangle();
+                //    myRectangle.Width = 3;
+                //    myRectangle.Height = 3;
+                //    myRectangle.StrokeThickness = 1;
+                //    myRectangle.Stroke = Brushes.Red;
+                //    myRectangle.Fill = Brushes.Red;
+
+                //    ToolTip toolTip = new ToolTip();
+                //    toolTip.Content = "Switch\nID: " + switchEntity.Id + "  Name: " + switchEntity.Name + "\nStatus: " + switchEntity.Status;
+                //    toolTip.Background = Brushes.Black;
+                //    toolTip.Foreground = Brushes.White;
+                //    toolTip.Padding = new Thickness(10);
+
+                //    myRectangle.ToolTip = toolTip;
+                //    myRectangle.Name = "_" + switchEntity.Id.ToString();
+
+
+                //    MyModel3DGroup.Children.Add(myRectangle);
+
+                //    myRectangle.MouseLeftButtonDown += MouseLeftClickNode;
+
+                //}
+                //if (el.Item1.Equals("node"))
+                //{
+                //    NodeEntity nodeEntity = (NodeEntity)el.Item2;
+                //    Rectangle myRectangle = new Rectangle();
+
+                //    myRectangle.Width = 3;
+                //    myRectangle.Height = 3;
+                //    myRectangle.StrokeThickness = 1;
+                //    myRectangle.Stroke = Brushes.Green;
+                //    myRectangle.Fill = Brushes.Green;
+
+                //    ToolTip toolTip = new ToolTip();
+                //    toolTip.Content = "Node\nID: " + nodeEntity.Id + "  Name: " + nodeEntity.Name;
+                //    toolTip.Background = Brushes.Black;
+                //    toolTip.Foreground = Brushes.White;
+                //    toolTip.Padding = new Thickness(10);
+
+                //    myRectangle.ToolTip = toolTip;
+                //    myRectangle.Name = "_" + nodeEntity.Id.ToString();
+
+                //    MyModel3DGroup.Children.Add(myRectangle);
+
+                //    myRectangle.MouseLeftButtonDown += MouseLeftClickNode;
+
+                //}
+
+            }
+        }
         public void FindMinMax(out double minXlocal, out double maxXlocal, out double minYlocal, out double maxYlocal)
         {
             maxXlocal = 0;
@@ -149,6 +253,15 @@ namespace _3DNetwork
                 }
 
             }
+        }
+
+        public bool IsInRange(double latitude, double longitude)
+        {
+            if(latitude > 45.2325 && latitude < 45.277031 &&  longitude > 19.793909 && longitude < 19.894459)
+            {
+                return true;
+            }
+            return false;
         }
         public static void ToLatLon(double utmX, double utmY, int zoneUTM, out double latitude, out double longitude)
         {
