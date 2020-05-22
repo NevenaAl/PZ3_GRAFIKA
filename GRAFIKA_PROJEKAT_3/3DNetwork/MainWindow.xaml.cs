@@ -25,14 +25,20 @@ namespace _3DNetwork
     {
         public double noviX, noviY;
         public double minX, maxX, minY, maxY;
+        private GeometryModel3D hitgeo;
         public Dictionary<long, Tuple<string, object>> dictionaryNodes { get; set; }
         public Dictionary<long, LineEntity> dictionaryLines { get; set; }
+        public List<GeometryModel3D> geometryModels { get; set; }
+        public List<GeometryModel3D> lineModels { get; set; }
         public long[,] Matrix { get; set; }
+        public ToolTip tooltip = new ToolTip();
         public MainWindow()
         {
             InitializeComponent();
             dictionaryNodes = new Dictionary<long, Tuple<string, object>>();
             dictionaryLines = new Dictionary<long, LineEntity>();
+            geometryModels = new List<GeometryModel3D>();
+            lineModels = new List<GeometryModel3D>();
             Matrix = new long[200, 200];
            
             LoadXml();
@@ -133,45 +139,19 @@ namespace _3DNetwork
                 if (el.Item1.Equals("substation"))
                 {
                     SubstationEntity subEntity = (SubstationEntity)el.Item2;
-
-                    GeometryModel3D myGeometryModel = new GeometryModel3D();
-                    MeshGeometry3D myMeshGeometry3D = new MeshGeometry3D();
-
-                    Point3DCollection myPositionCollection = new Point3DCollection();
-                    myPositionCollection.Add(new Point3D(0,0,0));
-                    myPositionCollection.Add(new Point3D(0.01,0,0));
-                    myPositionCollection.Add(new Point3D(0, 0.01, 0));
-                    myPositionCollection.Add(new Point3D(0.01, 0.01, 0));
-                    myPositionCollection.Add(new Point3D(0,0, 0.01));
-                    myPositionCollection.Add(new Point3D(0.01, 0, 0.01));
-                    myPositionCollection.Add(new Point3D(0, 0.01, 0.01));
-                    myPositionCollection.Add(new Point3D(0.01, 0.01, 0.01));
-
-                    myMeshGeometry3D.Positions = myPositionCollection;
-
-                    Int32Collection myTriangleIndicesCollection = new Int32Collection();
-                    Int32[] indices ={ 2, 3, 1, 3, 1, 0, 7, 1, 3, 7, 5, 1, 6, 5, 7, 6, 4, 5, 6, 2, 0, 2, 0, 4, 2, 7, 3, 2, 6, 7, 0, 1, 5, 0, 5, 4 };
-                    foreach (var i in indices)
-                    {
-                        myTriangleIndicesCollection.Add(i);
-                    }
-                    myMeshGeometry3D.TriangleIndices = myTriangleIndicesCollection;
-
-
-                    DiffuseMaterial myMaterial = new DiffuseMaterial(){ Brush = Brushes.Red};
-                    myGeometryModel.Material = myMaterial;
-                    myGeometryModel.Geometry = myMeshGeometry3D;
-
-                    ToolTip toolTip = new ToolTip();
-                    toolTip.Content = "Substation\nID: " + subEntity.Id + "  Name: " + subEntity.Name;
-                    toolTip.Background = Brushes.Black;
-                    toolTip.Foreground = Brushes.White;
-                    toolTip.Padding = new Thickness(10);
-
-                
+                    double x = 0;
+                    double z = 0;
+                    GeometryModel3D myGeometryModel = MakeCube(x, z);
+                    
                     MyModel3DGroup.Children.Add(myGeometryModel);
                     
+                    geometryModels.Add(myGeometryModel);
 
+                    //ToolTip toolTip = new ToolTip();
+                    //toolTip.Content = "Substation\nID: " + subEntity.Id + "  Name: " + subEntity.Name;
+                    //toolTip.Background = Brushes.Black;
+                    //toolTip.Foreground = Brushes.White;
+                    //toolTip.Padding = new Thickness(10);
 
                 }
                 //if (el.Item1.Equals("switch"))
@@ -226,6 +206,161 @@ namespace _3DNetwork
                 //}
 
             }
+        }
+        public GeometryModel3D MakeCube(double x, double z)
+        {
+            GeometryModel3D myGeometryModel = new GeometryModel3D();
+            MeshGeometry3D myMeshGeometry3D = new MeshGeometry3D();
+
+            Point3DCollection myPositionCollection = new Point3DCollection();
+            myPositionCollection.Add(new Point3D(0, 0, 0));
+            myPositionCollection.Add(new Point3D(0.01, 0, 0));
+            myPositionCollection.Add(new Point3D(0, 0.01, 0));
+            myPositionCollection.Add(new Point3D(0.01, 0.01, 0));
+            myPositionCollection.Add(new Point3D(0, 0, 0.01));
+            myPositionCollection.Add(new Point3D(0.01, 0, 0.01));
+            myPositionCollection.Add(new Point3D(0, 0.01, 0.01));
+            myPositionCollection.Add(new Point3D(0.01, 0.01, 0.01));
+
+            myMeshGeometry3D.Positions = myPositionCollection;
+
+            Int32Collection myTriangleIndicesCollection = new Int32Collection();
+            Int32[] indices = { 2, 3, 1, 3, 1, 0, 7, 1, 3, 7, 5, 1, 6, 5, 7, 6, 4, 5, 6, 2, 0, 2, 0, 4, 2, 7, 3, 2, 6, 7, 0, 1, 5, 0, 5, 4 };
+            foreach (var i in indices)
+            {
+                myTriangleIndicesCollection.Add(i);
+            }
+            myMeshGeometry3D.TriangleIndices = myTriangleIndicesCollection;
+            DiffuseMaterial myMaterial;
+            int numberOfCon = GetNumberOfConnections();
+            if (numberOfCon >= 0 && numberOfCon < 3)
+            {
+                myMaterial = new DiffuseMaterial() { Brush = Brushes.PaleVioletRed };
+            }
+            else if(numberOfCon>=3 && numberOfCon<=5)
+            {
+                myMaterial = new DiffuseMaterial() { Brush = Brushes.Red };
+            }
+            else
+            {
+                myMaterial = new DiffuseMaterial() { Brush = Brushes.DarkRed };
+            }
+            
+            myGeometryModel.Material = myMaterial;
+            myGeometryModel.Geometry = myMeshGeometry3D;
+
+
+            return myGeometryModel;
+        }
+
+        private void MyViewport3D_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            System.Windows.Point mouseposition = e.GetPosition(MyViewport3D);
+            Point3D testpoint3D = new Point3D(mouseposition.X, mouseposition.Y, 0);
+            Vector3D testdirection = new Vector3D(mouseposition.X, mouseposition.Y, 10);
+
+            PointHitTestParameters pointparams =
+                     new PointHitTestParameters(mouseposition);
+            RayHitTestParameters rayparams =
+                     new RayHitTestParameters(testpoint3D, testdirection);
+
+            //test for a result in the Viewport3D     
+            hitgeo = null;
+            VisualTreeHelper.HitTest(MyViewport3D, null, HTResult, pointparams);
+        }
+        private HitTestResultBehavior HTResult(System.Windows.Media.HitTestResult rawresult)
+        {
+
+            RayHitTestResult rayResult = rawresult as RayHitTestResult;
+           
+            if (rayResult != null)
+            {
+
+                DiffuseMaterial newColor =
+                     new DiffuseMaterial(new SolidColorBrush(
+                     System.Windows.Media.Colors.Blue));
+
+                bool gasit = false;
+                for (int i = 0; i < lineModels.Count; i++)
+                {
+                    if (lineModels[i] == rayResult.ModelHit)
+                    {
+                        hitgeo = (GeometryModel3D)rayResult.ModelHit;
+                        gasit = true;
+                        hitgeo.Material = newColor;
+                        
+                    }
+                    else
+                    {
+                        lineModels[i].Material = newColor;
+                    }
+                }
+                if (!gasit)
+                {
+                    hitgeo = null;
+                }
+            }
+
+            return HitTestResultBehavior.Stop;
+        }
+        private HitTestResultBehavior HTResult2(System.Windows.Media.HitTestResult rawresult)
+        {
+
+            RayHitTestResult rayResult = rawresult as RayHitTestResult;
+            
+            tooltip.IsOpen = false;
+            if (rayResult != null)
+            {
+
+                bool gasit = false;
+                for (int i = 0; i < geometryModels.Count; i++)
+                {
+                    if (geometryModels[i] == rayResult.ModelHit)
+                    {
+                        tooltip.IsOpen = true;
+                        tooltip.Content = "bla";
+                        tooltip.Background = Brushes.Black;
+                        ToolTipService.SetShowDuration(tooltip, 1000);
+                       
+                    }
+                    else
+                    {
+                        tooltip.IsOpen = false;
+                    }
+                }
+                if (!gasit)
+                {
+                    hitgeo = null;
+                }
+            }
+
+            return HitTestResultBehavior.Stop;
+        }
+
+        private void MyViewport3D_MouseEnter(object sender, MouseEventArgs e)
+        {
+            System.Windows.Point mouseposition = e.GetPosition(MyViewport3D);
+            Point3D testpoint3D = new Point3D(mouseposition.X, mouseposition.Y, 0);
+            Vector3D testdirection = new Vector3D(mouseposition.X, mouseposition.Y, 10);
+
+            PointHitTestParameters pointparams =
+                     new PointHitTestParameters(mouseposition);
+            RayHitTestParameters rayparams =
+                     new RayHitTestParameters(testpoint3D, testdirection);
+
+            //test for a result in the Viewport3D     
+            hitgeo = null;
+            VisualTreeHelper.HitTest(MyViewport3D, null, HTResult2, pointparams);
+        }
+
+        private void MyViewport3D_MouseLeave(object sender, MouseEventArgs e)
+        {
+            tooltip.IsOpen = false;
+        }
+
+        public int GetNumberOfConnections()
+        {
+            return 0;
         }
         public void FindMinMax(out double minXlocal, out double maxXlocal, out double minYlocal, out double maxYlocal)
         {

@@ -6,8 +6,8 @@
         xmlns:local="clr-namespace:_3DNetwork"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        <Viewport3D x:Name="MyViewport3D">
+    <Grid x:Name="MyGrid">
+        <Viewport3D x:Name="MyViewport3D" MouseLeftButtonDown="MyViewport3D_MouseLeftButtonDown" MouseLeave="MyViewport3D_MouseLeave" MouseEnter="MyViewport3D_MouseEnter">
             <Viewport3D.Camera>
                 <PerspectiveCamera Position = "1,1,2" LookDirection = "0,-14,-10"
                FieldOfView = "110" UpDirection = "0,1,0" />
