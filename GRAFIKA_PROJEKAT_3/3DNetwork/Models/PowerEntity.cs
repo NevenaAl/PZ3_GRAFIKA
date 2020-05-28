@@ -12,8 +12,9 @@ namespace _3DNetwork.Models
         private string name;
         private double x;
         private double y;
-        private int canvasX;
-        private int canvasY;
+        private double mapX;
+        private double mapY;
+        private double mapZ;
         private int matrixRow;
         private int matrixColumn;
 
@@ -73,28 +74,40 @@ namespace _3DNetwork.Models
                 y = value;
             }
         }
-        public int CanvasX
+        public double MapX
         {
             get
             {
-                return canvasX;
+                return mapX;
             }
 
             set
             {
-                canvasX = value;
+                mapX = value;
             }
         }
-        public int CanvasY
+        public double MapY
         {
             get
             {
-                return canvasY;
+                return mapY;
             }
 
             set
             {
-                canvasY = value;
+                mapY = value;
+            }
+        }
+        public double MapZ
+        {
+            get
+            {
+                return mapZ;
+            }
+
+            set
+            {
+                mapZ = value;
             }
         }
         public int MatrixRow

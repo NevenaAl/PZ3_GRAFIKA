@@ -7,10 +7,9 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid x:Name="MyGrid">
-        <Viewport3D x:Name="MyViewport3D" MouseLeftButtonDown="MyViewport3D_MouseLeftButtonDown" MouseLeave="MyViewport3D_MouseLeave" MouseEnter="MyViewport3D_MouseEnter">
+        <Viewport3D x:Name="MyViewport3D" MouseLeftButtonDown="MyViewport3D_MouseLeftButtonDown" MouseLeave="MyViewport3D_MouseLeave" MouseMove="MyViewport3D_MouseMove">
             <Viewport3D.Camera>
-                <PerspectiveCamera Position = "1,1,2" LookDirection = "0,-14,-10"
-               FieldOfView = "110" UpDirection = "0,1,0" />
+                <PerspectiveCamera Position = "1,0.5,4.5" LookDirection = "0,-0.5,-3"/>
             </Viewport3D.Camera>
 
             <ModelVisual3D x:Name="MyModelVisual3D">

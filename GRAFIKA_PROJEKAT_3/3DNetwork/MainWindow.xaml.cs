@@ -23,29 +23,38 @@ namespace _3DNetwork
     /// </summary>
     public partial class MainWindow : Window
     {
+        #region Fields
         public double noviX, noviY;
-        public double minX, maxX, minY, maxY;
+        public double minX = 19.793909;
+        public double maxX = 19.894459;
+        public double minY = 45.2325;
+        public double maxY = 45.277031;
         private GeometryModel3D hitgeo;
-        public Dictionary<long, Tuple<string, object>> dictionaryNodes { get; set; }
+        public Dictionary<long, Tuple<string, PowerEntity>> dictionaryNodes { get; set; }
         public Dictionary<long, LineEntity> dictionaryLines { get; set; }
-        public List<GeometryModel3D> geometryModels { get; set; }
-        public List<GeometryModel3D> lineModels { get; set; }
-        public long[,] Matrix { get; set; }
+        public Dictionary<long,GeometryModel3D> geometryModels { get; set; }
+        public Dictionary<long,GeometryModel3D> lineModels { get; set; }
+        public string[,] NodesMatrix { get; set; }
+        public string[,] LinesMatrix { get; set; }
         public ToolTip tooltip = new ToolTip();
+        #endregion
         public MainWindow()
         {
             InitializeComponent();
-            dictionaryNodes = new Dictionary<long, Tuple<string, object>>();
+            dictionaryNodes = new Dictionary<long, Tuple<string, PowerEntity>>();
             dictionaryLines = new Dictionary<long, LineEntity>();
-            geometryModels = new List<GeometryModel3D>();
-            lineModels = new List<GeometryModel3D>();
-            Matrix = new long[200, 200];
+            geometryModels = new Dictionary<long, GeometryModel3D>();
+            lineModels = new Dictionary<long, GeometryModel3D>();
+            NodesMatrix = new string[200, 200];
+            LinesMatrix = new string[200, 200];
            
             LoadXml();
-            FindMinMax(out minX, out maxX, out minY, out maxY);
+            FillMatrix();
             DrawNodes();
             
         }
+
+        #region Entities
         private void LoadXml()
         {
             XmlDocument xmlDoc = new XmlDocument();
@@ -65,7 +74,11 @@ namespace _3DNetwork
                 ToLatLon(subEnt.X, subEnt.Y, 34, out noviY, out noviX);
                 subEnt.X = noviX;
                 subEnt.Y = noviY;
-                dictionaryNodes.Add(subEnt.Id, new Tuple<string, object>("substation", subEnt));
+                if (IsInRange(subEnt.Y, subEnt.X))
+                {
+                    dictionaryNodes.Add(subEnt.Id, new Tuple<string, PowerEntity>("substation", subEnt));
+
+                }
 
             }
 
@@ -82,7 +95,11 @@ namespace _3DNetwork
                 ToLatLon(nodeEnt.X, nodeEnt.Y, 34, out noviY, out noviX);
                 nodeEnt.X = noviX;
                 nodeEnt.Y = noviY;
-                dictionaryNodes.Add(nodeEnt.Id, new Tuple<string, object>("node", nodeEnt));
+
+                if (IsInRange(nodeEnt.Y, nodeEnt.X))
+                {
+                    dictionaryNodes.Add(nodeEnt.Id, new Tuple<string, PowerEntity>("node", nodeEnt));
+                }
 
             }
 
@@ -100,7 +117,11 @@ namespace _3DNetwork
                 ToLatLon(switchEnt.X, switchEnt.Y, 34, out noviY, out noviX);
                 switchEnt.X = noviX;
                 switchEnt.Y = noviY;
-                dictionaryNodes.Add(switchEnt.Id, new Tuple<string, object>("switch", switchEnt));
+
+                if (IsInRange(switchEnt.Y, switchEnt.X))
+                {
+                    dictionaryNodes.Add(switchEnt.Id, new Tuple<string, PowerEntity>("switch", switchEnt));
+                }
 
 
             }
@@ -139,88 +160,68 @@ namespace _3DNetwork
                 if (el.Item1.Equals("substation"))
                 {
                     SubstationEntity subEntity = (SubstationEntity)el.Item2;
-                    double x = 0;
-                    double z = 0;
-                    GeometryModel3D myGeometryModel = MakeCube(x, z);
+                    double x = subEntity.MapX;
+                    double y = subEntity.MapY;
+                    double z = subEntity.MapZ;
+                    GeometryModel3D myGeometryModel = MakeCube(x,y,z);
                     
                     MyModel3DGroup.Children.Add(myGeometryModel);
                     
-                    geometryModels.Add(myGeometryModel);
-
-                    //ToolTip toolTip = new ToolTip();
-                    //toolTip.Content = "Substation\nID: " + subEntity.Id + "  Name: " + subEntity.Name;
-                    //toolTip.Background = Brushes.Black;
-                    //toolTip.Foreground = Brushes.White;
-                    //toolTip.Padding = new Thickness(10);
+                    geometryModels.Add(subEntity.Id,myGeometryModel);
 
                 }
                 //if (el.Item1.Equals("switch"))
                 //{
                 //    SwitchEntity switchEntity = (SwitchEntity)el.Item2;
-                //    Rectangle myRectangle = new Rectangle();
-                //    myRectangle.Width = 3;
-                //    myRectangle.Height = 3;
-                //    myRectangle.StrokeThickness = 1;
-                //    myRectangle.Stroke = Brushes.Red;
-                //    myRectangle.Fill = Brushes.Red;
+                //    double x = switchEntity.MapX;
+                //    double y = switchEntity.MapY;
+                //    double z = switchEntity.MapZ;
+                //    GeometryModel3D myGeometryModel = MakeCube(x, y, z);
 
-                //    ToolTip toolTip = new ToolTip();
-                //    toolTip.Content = "Switch\nID: " + switchEntity.Id + "  Name: " + switchEntity.Name + "\nStatus: " + switchEntity.Status;
-                //    toolTip.Background = Brushes.Black;
-                //    toolTip.Foreground = Brushes.White;
-                //    toolTip.Padding = new Thickness(10);
+                //    MyModel3DGroup.Children.Add(myGeometryModel);
 
-                //    myRectangle.ToolTip = toolTip;
-                //    myRectangle.Name = "_" + switchEntity.Id.ToString();
-
-
-                //    MyModel3DGroup.Children.Add(myRectangle);
-
-                //    myRectangle.MouseLeftButtonDown += MouseLeftClickNode;
+                //    geometryModels.Add(switchEntity.Id, myGeometryModel);
 
                 //}
                 //if (el.Item1.Equals("node"))
                 //{
                 //    NodeEntity nodeEntity = (NodeEntity)el.Item2;
-                //    Rectangle myRectangle = new Rectangle();
+                //    double x = nodeEntity.MapX;
+                //    double y = nodeEntity.MapY;
+                //    double z = nodeEntity.MapZ;
+                //    GeometryModel3D myGeometryModel = MakeCube(x, y, z);
 
-                //    myRectangle.Width = 3;
-                //    myRectangle.Height = 3;
-                //    myRectangle.StrokeThickness = 1;
-                //    myRectangle.Stroke = Brushes.Green;
-                //    myRectangle.Fill = Brushes.Green;
+                //    MyModel3DGroup.Children.Add(myGeometryModel);
 
-                //    ToolTip toolTip = new ToolTip();
-                //    toolTip.Content = "Node\nID: " + nodeEntity.Id + "  Name: " + nodeEntity.Name;
-                //    toolTip.Background = Brushes.Black;
-                //    toolTip.Foreground = Brushes.White;
-                //    toolTip.Padding = new Thickness(10);
-
-                //    myRectangle.ToolTip = toolTip;
-                //    myRectangle.Name = "_" + nodeEntity.Id.ToString();
-
-                //    MyModel3DGroup.Children.Add(myRectangle);
-
-                //    myRectangle.MouseLeftButtonDown += MouseLeftClickNode;
+                //    geometryModels.Add(nodeEntity.Id, myGeometryModel);
 
                 //}
-
+          
             }
         }
-        public GeometryModel3D MakeCube(double x, double z)
+        public GeometryModel3D MakeCube(double x,double y, double z)
         {
             GeometryModel3D myGeometryModel = new GeometryModel3D();
             MeshGeometry3D myMeshGeometry3D = new MeshGeometry3D();
 
             Point3DCollection myPositionCollection = new Point3DCollection();
-            myPositionCollection.Add(new Point3D(0, 0, 0));
-            myPositionCollection.Add(new Point3D(0.01, 0, 0));
-            myPositionCollection.Add(new Point3D(0, 0.01, 0));
-            myPositionCollection.Add(new Point3D(0.01, 0.01, 0));
-            myPositionCollection.Add(new Point3D(0, 0, 0.01));
-            myPositionCollection.Add(new Point3D(0.01, 0, 0.01));
-            myPositionCollection.Add(new Point3D(0, 0.01, 0.01));
-            myPositionCollection.Add(new Point3D(0.01, 0.01, 0.01));
+            //myPositionCollection.Add(new Point3D(0, 0, 0));
+            //myPositionCollection.Add(new Point3D(0.01, 0, 0));
+            //myPositionCollection.Add(new Point3D(0, 0.01, 0));
+            //myPositionCollection.Add(new Point3D(0.01, 0.01, 0));
+            //myPositionCollection.Add(new Point3D(0, 0, 0.01));
+            //myPositionCollection.Add(new Point3D(0.01, 0, 0.01));
+            //myPositionCollection.Add(new Point3D(0, 0.01, 0.01));
+            //myPositionCollection.Add(new Point3D(0.01, 0.01, 0.01));
+
+            myPositionCollection.Add(new Point3D(0 + x, 0 + y, 0 + z));
+            myPositionCollection.Add(new Point3D(0.01 + x, 0 + y, 0 + z));
+            myPositionCollection.Add(new Point3D(0 + x, 0.01 + y, 0 + z));
+            myPositionCollection.Add(new Point3D(0.01 + x, 0.01 + y, 0 + z));
+            myPositionCollection.Add(new Point3D(0 + x, 0 + y, 0.01 + z));
+            myPositionCollection.Add(new Point3D(0.01 + x, 0 + y, 0.01 + z));
+            myPositionCollection.Add(new Point3D(0 + x, 0.01 + y, 0.01 + z));
+            myPositionCollection.Add(new Point3D(0.01 + x, 0.01 + y, 0.01 + z));
 
             myMeshGeometry3D.Positions = myPositionCollection;
 
@@ -252,22 +253,9 @@ namespace _3DNetwork
 
             return myGeometryModel;
         }
+        #endregion
 
-        private void MyViewport3D_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
-        {
-            System.Windows.Point mouseposition = e.GetPosition(MyViewport3D);
-            Point3D testpoint3D = new Point3D(mouseposition.X, mouseposition.Y, 0);
-            Vector3D testdirection = new Vector3D(mouseposition.X, mouseposition.Y, 10);
-
-            PointHitTestParameters pointparams =
-                     new PointHitTestParameters(mouseposition);
-            RayHitTestParameters rayparams =
-                     new RayHitTestParameters(testpoint3D, testdirection);
-
-            //test for a result in the Viewport3D     
-            hitgeo = null;
-            VisualTreeHelper.HitTest(MyViewport3D, null, HTResult, pointparams);
-        }
+        #region MouseEvents
         private HitTestResultBehavior HTResult(System.Windows.Media.HitTestResult rawresult)
         {
 
@@ -307,37 +295,44 @@ namespace _3DNetwork
         {
 
             RayHitTestResult rayResult = rawresult as RayHitTestResult;
-            
-            tooltip.IsOpen = false;
+
+            //tooltip.IsOpen = false;
+           
             if (rayResult != null)
             {
 
                 bool gasit = false;
-                for (int i = 0; i < geometryModels.Count; i++)
+                foreach (long key in geometryModels.Keys)
                 {
-                    if (geometryModels[i] == rayResult.ModelHit)
+                    if (geometryModels[key] == (GeometryModel3D)rayResult.ModelHit)
                     {
-                        tooltip.IsOpen = true;
-                        tooltip.Content = "bla";
-                        tooltip.Background = Brushes.Black;
+                         Tuple<string, PowerEntity> powerEntity = dictionaryNodes[key];
+
+                         if (powerEntity.Item1 == "switch")
+                            tooltip.Content = "Switch\nID: " + powerEntity.Item2.Id + "  Name: " + powerEntity.Item2.Name + "\nStatus: " + ((SwitchEntity)powerEntity.Item2).Status;
+                         else if (powerEntity.Item1 == "node")
+                            tooltip.Content = "Node\nID: " + powerEntity.Item2.Id + "  Name: " + powerEntity.Item2.Name;
+                         else if (powerEntity.Item1 == "substation")
+                            tooltip.Content = "Substation\nID: " + powerEntity.Item2.Id + "  Name: " + powerEntity.Item2.Name;
+                        
+                         tooltip.IsOpen = true;
+                         tooltip.Background = Brushes.Black;
+                         tooltip.Foreground = Brushes.White;
+                         tooltip.Padding = new Thickness(10);
                         ToolTipService.SetShowDuration(tooltip, 1000);
-                       
-                    }
-                    else
-                    {
-                        tooltip.IsOpen = false;
+                        gasit = true;
                     }
                 }
                 if (!gasit)
                 {
+                    tooltip.IsOpen = false;
                     hitgeo = null;
                 }
             }
 
             return HitTestResultBehavior.Stop;
         }
-
-        private void MyViewport3D_MouseEnter(object sender, MouseEventArgs e)
+        private void MyViewport3D_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             System.Windows.Point mouseposition = e.GetPosition(MyViewport3D);
             Point3D testpoint3D = new Point3D(mouseposition.X, mouseposition.Y, 0);
@@ -348,51 +343,88 @@ namespace _3DNetwork
             RayHitTestParameters rayparams =
                      new RayHitTestParameters(testpoint3D, testdirection);
 
-            //test for a result in the Viewport3D     
+            hitgeo = null;
+            VisualTreeHelper.HitTest(MyViewport3D, null, HTResult, pointparams);
+        }
+        private void MyViewport3D_MouseMove(object sender, MouseEventArgs e)
+        {
+            System.Windows.Point mouseposition = e.GetPosition(MyViewport3D);
+            Point3D testpoint3D = new Point3D(mouseposition.X, mouseposition.Y, 0);
+            Vector3D testdirection = new Vector3D(mouseposition.X, mouseposition.Y, 10);
+
+            PointHitTestParameters pointparams =
+                     new PointHitTestParameters(mouseposition);
+            RayHitTestParameters rayparams =
+                     new RayHitTestParameters(testpoint3D, testdirection);
+
             hitgeo = null;
             VisualTreeHelper.HitTest(MyViewport3D, null, HTResult2, pointparams);
         }
-
         private void MyViewport3D_MouseLeave(object sender, MouseEventArgs e)
         {
             tooltip.IsOpen = false;
+       
         }
+        #endregion
 
+        #region Matrix
         public int GetNumberOfConnections()
         {
             return 0;
         }
-        public void FindMinMax(out double minXlocal, out double maxXlocal, out double minYlocal, out double maxYlocal)
+        public void FillMatrix()
         {
-            maxXlocal = 0;
-            maxYlocal = 0;
-            minXlocal = ((PowerEntity)dictionaryNodes.First().Value.Item2).X;
-            minYlocal = ((PowerEntity)dictionaryNodes.First().Value.Item2).Y;
             foreach (var el in dictionaryNodes.Values)
             {
-                if (((PowerEntity)el.Item2).Y > maxYlocal)
+                PowerEntity powEntity;
+                if (el.Item1.Equals("substation"))
                 {
-                    maxYlocal = ((PowerEntity)el.Item2).Y;
+                    powEntity = (SubstationEntity)el.Item2;
+
                 }
-                if (((PowerEntity)el.Item2).X > maxXlocal)
+                else if (el.Item1.Equals("switch"))
                 {
-                    maxXlocal = ((PowerEntity)el.Item2).X;
+                    powEntity = (SwitchEntity)el.Item2;
+
                 }
-                if (((PowerEntity)el.Item2).Y < minYlocal)
+                else
                 {
-                    minYlocal = ((PowerEntity)el.Item2).Y;
+                    powEntity = (NodeEntity)el.Item2;
                 }
-                if (((PowerEntity)el.Item2).X < minXlocal)
+
+                int x = Scale(powEntity.X, minX, maxX);
+                int z = Scale(powEntity.Y, minY, maxY);
+                int row = 199 - z;
+                int column = x;
+                double yDifference = 0;
+
+                if (NodesMatrix[row, column] != null)
                 {
-                    minXlocal = ((PowerEntity)el.Item2).X;
+                    string s = NodesMatrix[row, column];
+                    string[] array = s.Split('_');
+                    int nodesNum = array.Count() -1;
+                    yDifference += nodesNum* 0.01;
                 }
+                NodesMatrix[row, column] += powEntity.Id.ToString();
+                powEntity.MatrixRow = row;
+                powEntity.MatrixColumn = column;
+
+                powEntity.MapX = x * 0.01;
+                powEntity.MapZ = 1.99 - z * 0.01;
+                powEntity.MapY = yDifference;
 
             }
         }
+        #endregion
 
+        #region Helper
+        private int Scale(double value, double min, double max)
+        {
+            return (int)((double)(value - min) / (max - min) * 199);
+        }
         public bool IsInRange(double latitude, double longitude)
         {
-            if(latitude > 45.2325 && latitude < 45.277031 &&  longitude > 19.793909 && longitude < 19.894459)
+            if (latitude > minY && latitude < maxY && longitude > minX && longitude < maxX)
             {
                 return true;
             }
@@ -438,5 +470,6 @@ namespace _3DNetwork
             longitude = ((delt * (180.0 / Math.PI)) + s) + diflon;
             latitude = ((lat + (1 + e2cuadrada * Math.Pow(Math.Cos(lat), 2) - (3.0 / 2.0) * e2cuadrada * Math.Sin(lat) * Math.Cos(lat) * (tao - lat)) * (tao - lat)) * (180.0 / Math.PI)) + diflat;
         }
+        #endregion
     }
 }
