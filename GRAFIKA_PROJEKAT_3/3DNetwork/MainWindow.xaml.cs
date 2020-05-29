@@ -54,7 +54,7 @@ namespace _3DNetwork
             
         }
 
-        #region Entities
+        
         private void LoadXml()
         {
             XmlDocument xmlDoc = new XmlDocument();
@@ -146,11 +146,43 @@ namespace _3DNetwork
                 lineEnt.ThermalConstantHeat = long.Parse(node.SelectSingleNode("ThermalConstantHeat").InnerText);
                 lineEnt.FirstEnd = long.Parse(node.SelectSingleNode("FirstEnd").InnerText);
                 lineEnt.SecondEnd = long.Parse(node.SelectSingleNode("SecondEnd").InnerText);
+                lineEnt.Vertices = new List<Point>();
+                foreach (XmlNode pointNode in node.ChildNodes[9].ChildNodes) // 9 posto je Vertices 9. node u jednom line objektu
+                {
+                    Point p = new Point();
 
-                dictionaryLines.Add(lineEnt.Id, lineEnt);
+                    p.X = double.Parse(pointNode.SelectSingleNode("X").InnerText);
+                    p.Y = double.Parse(pointNode.SelectSingleNode("Y").InnerText);
+
+                    ToLatLon(p.X, p.Y, 34, out noviX, out noviY);
+
+                    lineEnt.Vertices.Add(new Point(noviX, noviY));
+                }
+
+                if (DictionaryContainsNode(lineEnt.FirstEnd) && DictionaryContainsNode(lineEnt.SecondEnd))
+                {
+                    if (!LineExists(lineEnt.FirstEnd, lineEnt.SecondEnd))
+                    {
+                        dictionaryLines.Add(lineEnt.Id, lineEnt);
+
+                        dictionaryNodes[lineEnt.FirstEnd].Item2.Connections++;
+                        dictionaryNodes[lineEnt.SecondEnd].Item2.Connections++;
+                    }
+
+                }
 
             }
 
+        }
+
+        #region 3D
+        private void DrawLines()
+        {
+            foreach(var el in dictionaryLines.Values)
+            {
+                GeometryModel3D myGeometryModel = new GeometryModel3D();
+                lineModels.Add(el.Id, myGeometryModel);
+            }
         }
         private void DrawNodes()
         {
@@ -160,60 +192,50 @@ namespace _3DNetwork
                 if (el.Item1.Equals("substation"))
                 {
                     SubstationEntity subEntity = (SubstationEntity)el.Item2;
-                    double x = subEntity.MapX;
-                    double y = subEntity.MapY;
-                    double z = subEntity.MapZ;
-                    GeometryModel3D myGeometryModel = MakeCube(x,y,z);
+                    
+                    GeometryModel3D myGeometryModel = MakeCube(subEntity);
                     
                     MyModel3DGroup.Children.Add(myGeometryModel);
                     
                     geometryModels.Add(subEntity.Id,myGeometryModel);
 
                 }
-                //if (el.Item1.Equals("switch"))
-                //{
-                //    SwitchEntity switchEntity = (SwitchEntity)el.Item2;
-                //    double x = switchEntity.MapX;
-                //    double y = switchEntity.MapY;
-                //    double z = switchEntity.MapZ;
-                //    GeometryModel3D myGeometryModel = MakeCube(x, y, z);
+                if (el.Item1.Equals("switch"))
+                {
+                    SwitchEntity switchEntity = (SwitchEntity)el.Item2;
+                   
+                    GeometryModel3D myGeometryModel = MakeCube(switchEntity);
 
-                //    MyModel3DGroup.Children.Add(myGeometryModel);
+                    MyModel3DGroup.Children.Add(myGeometryModel);
 
-                //    geometryModels.Add(switchEntity.Id, myGeometryModel);
+                    geometryModels.Add(switchEntity.Id, myGeometryModel);
 
-                //}
-                //if (el.Item1.Equals("node"))
-                //{
-                //    NodeEntity nodeEntity = (NodeEntity)el.Item2;
-                //    double x = nodeEntity.MapX;
-                //    double y = nodeEntity.MapY;
-                //    double z = nodeEntity.MapZ;
-                //    GeometryModel3D myGeometryModel = MakeCube(x, y, z);
+                }
+                if (el.Item1.Equals("node"))
+                {
+                    NodeEntity nodeEntity = (NodeEntity)el.Item2;
+                   
+                    GeometryModel3D myGeometryModel = MakeCube(nodeEntity);
 
-                //    MyModel3DGroup.Children.Add(myGeometryModel);
+                    MyModel3DGroup.Children.Add(myGeometryModel);
 
-                //    geometryModels.Add(nodeEntity.Id, myGeometryModel);
+                    geometryModels.Add(nodeEntity.Id, myGeometryModel);
 
-                //}
-          
+                }
+
             }
         }
-        public GeometryModel3D MakeCube(double x,double y, double z)
+        public GeometryModel3D MakeCube(PowerEntity entity)
         {
+            double x = entity.MapX;
+            double y = entity.MapY;
+            double z = entity.MapZ;
+
             GeometryModel3D myGeometryModel = new GeometryModel3D();
             MeshGeometry3D myMeshGeometry3D = new MeshGeometry3D();
 
             Point3DCollection myPositionCollection = new Point3DCollection();
-            //myPositionCollection.Add(new Point3D(0, 0, 0));
-            //myPositionCollection.Add(new Point3D(0.01, 0, 0));
-            //myPositionCollection.Add(new Point3D(0, 0.01, 0));
-            //myPositionCollection.Add(new Point3D(0.01, 0.01, 0));
-            //myPositionCollection.Add(new Point3D(0, 0, 0.01));
-            //myPositionCollection.Add(new Point3D(0.01, 0, 0.01));
-            //myPositionCollection.Add(new Point3D(0, 0.01, 0.01));
-            //myPositionCollection.Add(new Point3D(0.01, 0.01, 0.01));
-
+           
             myPositionCollection.Add(new Point3D(0 + x, 0 + y, 0 + z));
             myPositionCollection.Add(new Point3D(0.01 + x, 0 + y, 0 + z));
             myPositionCollection.Add(new Point3D(0 + x, 0.01 + y, 0 + z));
@@ -233,20 +255,19 @@ namespace _3DNetwork
             }
             myMeshGeometry3D.TriangleIndices = myTriangleIndicesCollection;
             DiffuseMaterial myMaterial;
-            int numberOfCon = GetNumberOfConnections();
-            if (numberOfCon >= 0 && numberOfCon < 3)
+            if (entity.Connections >= 0 && entity.Connections < 3)
             {
-                myMaterial = new DiffuseMaterial() { Brush = Brushes.PaleVioletRed };
+                myMaterial = new DiffuseMaterial() { Brush = (Brush)(new BrushConverter().ConvertFrom("#FF994343"))};
             }
-            else if(numberOfCon>=3 && numberOfCon<=5)
+            else if(entity.Connections >= 3 && entity.Connections <= 5)
             {
-                myMaterial = new DiffuseMaterial() { Brush = Brushes.Red };
+                myMaterial = new DiffuseMaterial() { Brush = (Brush)(new BrushConverter().ConvertFrom("#FF931B1B")) };
             }
             else
             {
-                myMaterial = new DiffuseMaterial() { Brush = Brushes.DarkRed };
+                myMaterial = new DiffuseMaterial() { Brush = (Brush)(new BrushConverter().ConvertFrom("#FF4F0505")) };
             }
-            
+
             myGeometryModel.Material = myMaterial;
             myGeometryModel.Geometry = myMeshGeometry3D;
 
@@ -266,21 +287,29 @@ namespace _3DNetwork
 
                 DiffuseMaterial newColor =
                      new DiffuseMaterial(new SolidColorBrush(
-                     System.Windows.Media.Colors.Blue));
-
+                     System.Windows.Media.Colors.Green));
+            
                 bool gasit = false;
-                for (int i = 0; i < lineModels.Count; i++)
+                foreach (long key in lineModels.Keys)
                 {
-                    if (lineModels[i] == rayResult.ModelHit)
+                    if (lineModels[key] == (GeometryModel3D)rayResult.ModelHit)
                     {
+                        LineEntity lineEntity = dictionaryLines[key];
+
+                        GeometryModel3D node1 = geometryModels[lineEntity.FirstEnd];
+                        GeometryModel3D node2 = geometryModels[lineEntity.SecondEnd];
+
+                        node1.Material = newColor;
+                        node2.Material = newColor;
+
                         hitgeo = (GeometryModel3D)rayResult.ModelHit;
                         gasit = true;
-                        hitgeo.Material = newColor;
+                       // hitgeo.Material = newColor;
                         
                     }
                     else
                     {
-                        lineModels[i].Material = newColor;
+                       // lineModels[key].Material = newColor;
                     }
                 }
                 if (!gasit)
@@ -368,10 +397,7 @@ namespace _3DNetwork
         #endregion
 
         #region Matrix
-        public int GetNumberOfConnections()
-        {
-            return 0;
-        }
+       
         public void FillMatrix()
         {
             foreach (var el in dictionaryNodes.Values)
@@ -405,7 +431,7 @@ namespace _3DNetwork
                     int nodesNum = array.Count() -1;
                     yDifference += nodesNum* 0.01;
                 }
-                NodesMatrix[row, column] += powEntity.Id.ToString();
+                NodesMatrix[row, column] += "_"+ powEntity.Id.ToString();
                 powEntity.MatrixRow = row;
                 powEntity.MatrixColumn = column;
 
@@ -418,6 +444,22 @@ namespace _3DNetwork
         #endregion
 
         #region Helper
+        private bool LineExists(long firstNodeId, long secondNodeId)
+        {
+            foreach (var line in dictionaryLines.Values)
+            {
+                if ((line.FirstEnd == firstNodeId && line.SecondEnd == secondNodeId) || (line.SecondEnd == firstNodeId && line.FirstEnd == secondNodeId))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+        private bool DictionaryContainsNode(long nodeId)
+        {
+            return dictionaryNodes.ContainsKey(nodeId);
+
+        }
         private int Scale(double value, double min, double max)
         {
             return (int)((double)(value - min) / (max - min) * 199);

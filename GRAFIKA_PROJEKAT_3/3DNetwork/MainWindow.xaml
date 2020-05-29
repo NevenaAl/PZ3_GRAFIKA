@@ -5,8 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:_3DNetwork"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid x:Name="MyGrid">
+        Title="3DMap" Height="450" Width="800">
+    <Grid x:Name="MyGrid" Background="#FF191818">
         <Viewport3D x:Name="MyViewport3D" MouseLeftButtonDown="MyViewport3D_MouseLeftButtonDown" MouseLeave="MyViewport3D_MouseLeave" MouseMove="MyViewport3D_MouseMove">
             <Viewport3D.Camera>
                 <PerspectiveCamera Position = "1,0.5,4.5" LookDirection = "0,-0.5,-3"/>
@@ -34,5 +34,11 @@
                 </ModelVisual3D.Content>
             </ModelVisual3D>
         </Viewport3D>
+        <Rectangle Fill="#FF994343" HorizontalAlignment="Left" Height="23" Margin="48,38,0,0"  VerticalAlignment="Top" Width="23"/>
+        <Rectangle Fill="#FF931B1B" HorizontalAlignment="Left" Height="23" Margin="190,38,0,0"  VerticalAlignment="Top" Width="23"/>
+        <Rectangle Fill="#FF4F0505" HorizontalAlignment="Left" Height="23" Margin="334,38,0,0"  VerticalAlignment="Top" Width="23"/>
+        <Label Content="0-3 Connections" Foreground="White" HorizontalAlignment="Left" Margin="76,39,0,0" VerticalAlignment="Top"/>
+        <Label Content="3-5 Connections" Foreground="White" HorizontalAlignment="Left" Margin="218,39,0,0" VerticalAlignment="Top"/>
+        <Label Content=">5 Connections" Foreground="White" HorizontalAlignment="Left" Margin="362,39,0,0" VerticalAlignment="Top"/>
     </Grid>
 </Window>

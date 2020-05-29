@@ -17,6 +17,7 @@ namespace _3DNetwork.Models
         private double mapZ;
         private int matrixRow;
         private int matrixColumn;
+        private int connections;
 
         public PowerEntity()
         {
@@ -132,6 +133,18 @@ namespace _3DNetwork.Models
             set
             {
                matrixColumn = value;
+            }
+        }
+        public int Connections
+        {
+            get
+            {
+                return connections;
+            }
+
+            set
+            {
+                connections = value;
             }
         }
     }
