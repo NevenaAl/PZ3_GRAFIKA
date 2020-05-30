@@ -5,11 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:_3DNetwork"
         mc:Ignorable="d"
-        Title="3DMap" Height="450" Width="800">
-    <Grid x:Name="MyGrid" Background="#FF191818">
-        <Viewport3D x:Name="MyViewport3D" MouseLeftButtonDown="MyViewport3D_MouseLeftButtonDown" MouseLeave="MyViewport3D_MouseLeave" MouseMove="MyViewport3D_MouseMove">
+        Title="3DMap" Height="450" Width="800" x:Name="mainWindow">
+    <Grid x:Name="MyGrid" Background="White">
+        <Viewport3D x:Name="MyViewport3D" MouseWheel="MyViewport3D_MouseWheel" MouseDown="MyViewport3D_MouseWheelDown" MouseUp="MyViewport3D_MouseUp" MouseLeftButtonDown="MyViewport3D_MouseLeftButtonDown" MouseLeave="MyViewport3D_MouseLeave" MouseMove="MyViewport3D_MouseMove">
             <Viewport3D.Camera>
-                <PerspectiveCamera Position = "1,0.5,4.5" LookDirection = "0,-0.5,-3"/>
+                <PerspectiveCamera Position = "1,0.8,4.5" LookDirection = "0,-0.6,-3"/>
             </Viewport3D.Camera>
 
             <ModelVisual3D x:Name="MyModelVisual3D">
@@ -32,6 +32,23 @@
                         </GeometryModel3D>
                     </Model3DGroup>
                 </ModelVisual3D.Content>
+                
+                <ModelVisual3D.Transform>
+                    <Transform3DGroup>
+                        <RotateTransform3D x:Name="xRotation" CenterX="0" CenterZ="0" CenterY="0">
+                            <RotateTransform3D.Rotation>
+                                <AxisAngleRotation3D x:Name = "xAxisRotation" Angle="0"  Axis = "1 0 0"/>
+                            </RotateTransform3D.Rotation>
+                        </RotateTransform3D>
+                        <RotateTransform3D x:Name="yRotation" CenterX="0" CenterZ="0" CenterY="0">
+                            <RotateTransform3D.Rotation>
+                                <AxisAngleRotation3D x:Name = "yAxisRotation" Angle="0" Axis = "0 1 0"/>
+                            </RotateTransform3D.Rotation>
+                        </RotateTransform3D>
+                        <TranslateTransform3D x:Name="translate3D" OffsetX="0" OffsetY="0" OffsetZ="0"/>
+                        <ScaleTransform3D x:Name="scale3D" ScaleX="1" ScaleY="1" ScaleZ="1"/>
+                    </Transform3DGroup>
+                </ModelVisual3D.Transform>
             </ModelVisual3D>
         </Viewport3D>
         <Rectangle Fill="#FF994343" HorizontalAlignment="Left" Height="23" Margin="48,38,0,0"  VerticalAlignment="Top" Width="23"/>

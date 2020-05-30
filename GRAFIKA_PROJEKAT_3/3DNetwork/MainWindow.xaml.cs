@@ -29,11 +29,24 @@ namespace _3DNetwork
         public double maxX = 19.894459;
         public double minY = 45.2325;
         public double maxY = 45.277031;
+
+        double scaleX = 1;
+        double scaleY = 1;
+        double scaleZ = 1;
+        private int zoomMax = 25;
+        private int zoomMin = -3;
+        private int zoomCurent = 1;
+        private Point startPoint = new Point();
+        private Point offsetPoint = new Point();
+        bool mouseLeftDown = false;
+        bool mouseWheelDown = false;
+
         private GeometryModel3D hitgeo;
         public Dictionary<long, Tuple<string, PowerEntity>> dictionaryNodes { get; set; }
         public Dictionary<long, LineEntity> dictionaryLines { get; set; }
         public Dictionary<long,GeometryModel3D> geometryModels { get; set; }
         public Dictionary<long,GeometryModel3D> lineModels { get; set; }
+        public List<Tuple<Material,GeometryModel3D>> coloredNodes { get; set; }
         public string[,] NodesMatrix { get; set; }
         public string[,] LinesMatrix { get; set; }
         public ToolTip tooltip = new ToolTip();
@@ -45,12 +58,14 @@ namespace _3DNetwork
             dictionaryLines = new Dictionary<long, LineEntity>();
             geometryModels = new Dictionary<long, GeometryModel3D>();
             lineModels = new Dictionary<long, GeometryModel3D>();
+            coloredNodes = new List<Tuple<Material, GeometryModel3D>>();
             NodesMatrix = new string[200, 200];
             LinesMatrix = new string[200, 200];
            
             LoadXml();
             FillMatrix();
             DrawNodes();
+            DrawLines();
             
         }
 
@@ -154,7 +169,7 @@ namespace _3DNetwork
                     p.X = double.Parse(pointNode.SelectSingleNode("X").InnerText);
                     p.Y = double.Parse(pointNode.SelectSingleNode("Y").InnerText);
 
-                    ToLatLon(p.X, p.Y, 34, out noviX, out noviY);
+                    ToLatLon(p.X, p.Y, 34, out noviY, out noviX);
 
                     lineEnt.Vertices.Add(new Point(noviX, noviY));
                 }
@@ -181,6 +196,50 @@ namespace _3DNetwork
             foreach(var el in dictionaryLines.Values)
             {
                 GeometryModel3D myGeometryModel = new GeometryModel3D();
+                MeshGeometry3D myMeshGeometry3D = new MeshGeometry3D();
+
+                Point3DCollection myPositionCollection = new Point3DCollection();
+
+
+                foreach (var point in el.Vertices)
+                {
+                    double x = Scale(point.X, minX, maxX) * 0.01;
+                    double z = 1.99 - Scale(point.Y, minY, maxY) * 0.01;
+                    double y = 0.001;
+
+                    //myPositionCollection.Add(new Point3D(x, y + 0.0025, z));
+                    //myPositionCollection.Add(new Point3D(x, y - 0.0025, z));
+                    myPositionCollection.Add(new Point3D(x, y, z - 0.0025));
+                    myPositionCollection.Add(new Point3D(x, y, z + 0.0025));
+
+                }
+
+                myMeshGeometry3D.Positions = myPositionCollection;
+
+                Int32Collection myTriangleIndicesCollection = new Int32Collection();
+
+                for (int i = 0; i < myPositionCollection.Count; i++)
+                {
+                    myTriangleIndicesCollection.Add(i);
+
+                    if (i >= 2 && i < myPositionCollection.Count - 1 && i % 2 == 0)
+                    {
+                        myTriangleIndicesCollection.Add(i);
+                        myTriangleIndicesCollection.Add(i - 1);
+                    }
+                    else if (i >= 2 && i < myPositionCollection.Count - 1 && i % 2 != 0)
+                    {
+                        myTriangleIndicesCollection.Add(i - 1);
+                        myTriangleIndicesCollection.Add(i);
+                    }
+                }
+                myMeshGeometry3D.TriangleIndices = myTriangleIndicesCollection;
+                DiffuseMaterial myMaterial;
+                myMaterial = new DiffuseMaterial() { Brush = Brushes.Black };
+                myGeometryModel.Material = myMaterial;
+                myGeometryModel.Geometry = myMeshGeometry3D;
+
+                MyModel3DGroup.Children.Add(myGeometryModel);
                 lineModels.Add(el.Id, myGeometryModel);
             }
         }
@@ -248,7 +307,7 @@ namespace _3DNetwork
             myMeshGeometry3D.Positions = myPositionCollection;
 
             Int32Collection myTriangleIndicesCollection = new Int32Collection();
-            Int32[] indices = { 2, 3, 1, 3, 1, 0, 7, 1, 3, 7, 5, 1, 6, 5, 7, 6, 4, 5, 6, 2, 0, 2, 0, 4, 2, 7, 3, 2, 6, 7, 0, 1, 5, 0, 5, 4 };
+            Int32[] indices = { 2, 3, 1, 3, 1, 0, 7, 1, 3, 7, 5, 1, 6, 5, 7, 6, 4, 5, 6, 2, 0, 6, 0, 4, 2, 7, 3, 2, 6, 7, 0, 1, 5, 0, 5, 4 };
             foreach (var i in indices)
             {
                 myTriangleIndicesCollection.Add(i);
@@ -281,7 +340,13 @@ namespace _3DNetwork
         {
 
             RayHitTestResult rayResult = rawresult as RayHitTestResult;
-           
+
+            foreach(var item in coloredNodes)
+            {
+                item.Item2.Material = item.Item1;
+            }
+            coloredNodes.Clear();
+
             if (rayResult != null)
             {
 
@@ -299,11 +364,15 @@ namespace _3DNetwork
                         GeometryModel3D node1 = geometryModels[lineEntity.FirstEnd];
                         GeometryModel3D node2 = geometryModels[lineEntity.SecondEnd];
 
+                        coloredNodes.Add(new Tuple<Material,GeometryModel3D>(node1.Material, node1));
+                        coloredNodes.Add(new Tuple<Material,GeometryModel3D>(node2.Material, node2));
+
                         node1.Material = newColor;
                         node2.Material = newColor;
 
                         hitgeo = (GeometryModel3D)rayResult.ModelHit;
                         gasit = true;
+
                        // hitgeo.Material = newColor;
                         
                     }
@@ -363,6 +432,13 @@ namespace _3DNetwork
         }
         private void MyViewport3D_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
+            tooltip.IsOpen = false;
+            mouseLeftDown = true;
+            MyViewport3D.CaptureMouse();
+            startPoint = e.GetPosition(mainWindow);
+            offsetPoint.X = translate3D.OffsetX;
+            offsetPoint.Y = translate3D.OffsetZ;
+
             System.Windows.Point mouseposition = e.GetPosition(MyViewport3D);
             Point3D testpoint3D = new Point3D(mouseposition.X, mouseposition.Y, 0);
             Vector3D testdirection = new Vector3D(mouseposition.X, mouseposition.Y, 10);
@@ -377,18 +453,65 @@ namespace _3DNetwork
         }
         private void MyViewport3D_MouseMove(object sender, MouseEventArgs e)
         {
-            System.Windows.Point mouseposition = e.GetPosition(MyViewport3D);
-            Point3D testpoint3D = new Point3D(mouseposition.X, mouseposition.Y, 0);
-            Vector3D testdirection = new Vector3D(mouseposition.X, mouseposition.Y, 10);
+            if (mouseLeftDown && MyViewport3D.IsMouseCaptured)
+            {
+                Point end = e.GetPosition(mainWindow);
+                double offsetX = end.X - startPoint.X;
+                double offsetY = end.Y - startPoint.Y;
+                double w = this.Width;
+                double h = this.Height;
+                double translateX = (offsetX * 100) / w;
+                double translateZ = (offsetY * 100) / h;
+                translate3D.OffsetX = offsetPoint.X + (translateX / (100 * scale3D.ScaleX));
+                translate3D.OffsetZ = offsetPoint.Y + (translateZ / (100 * scale3D.ScaleZ));
+            }
+            else if(mouseWheelDown && MyViewport3D.IsMouseCaptured)
+            {
+                Point end = e.GetPosition(this);
+                double offsetX = end.X - startPoint.X;
+                double offsetY = end.Y - startPoint.Y;
+                double step = 0.2;
+                double w = this.Width;
+                double h = this.Height;
+                double translateX = (offsetX * 100) / w;
+                double translateY = (offsetY * 100) / h;
 
-            PointHitTestParameters pointparams =
-                     new PointHitTestParameters(mouseposition);
-            RayHitTestParameters rayparams =
-                     new RayHitTestParameters(testpoint3D, testdirection);
+                xAxisRotation.Angle = (xAxisRotation.Angle + translateY) % 360;
+                yAxisRotation.Angle = (yAxisRotation.Angle + translateX) % 360;
+                // xAxisRotation.Angle += step+ offsetY;
+                //yAxisRotation.Angle += step + offsetX;
+                startPoint = end;
+            }
+            else
+            {
+                System.Windows.Point mouseposition = e.GetPosition(MyViewport3D);
+                Point3D testpoint3D = new Point3D(mouseposition.X, mouseposition.Y, 0);
+                Vector3D testdirection = new Vector3D(mouseposition.X, mouseposition.Y, 10);
 
-            hitgeo = null;
-            VisualTreeHelper.HitTest(MyViewport3D, null, HTResult2, pointparams);
+                PointHitTestParameters pointparams =
+                         new PointHitTestParameters(mouseposition);
+                RayHitTestParameters rayparams =
+                         new RayHitTestParameters(testpoint3D, testdirection);
+
+                hitgeo = null;
+                VisualTreeHelper.HitTest(MyViewport3D, null, HTResult2, pointparams);
+            }
         }
+        private void MyViewport3D_MouseUp(object sender, MouseButtonEventArgs e)
+        {
+            if (e.MiddleButton == MouseButtonState.Released)
+            {
+                MyViewport3D.ReleaseMouseCapture();
+                mouseWheelDown = false;
+            }
+
+            if (e.LeftButton == MouseButtonState.Released)
+            {
+                MyViewport3D.ReleaseMouseCapture();
+                mouseLeftDown = false;
+            }
+        }
+
         private void MyViewport3D_MouseLeave(object sender, MouseEventArgs e)
         {
             tooltip.IsOpen = false;
@@ -472,6 +595,44 @@ namespace _3DNetwork
             }
             return false;
         }
+
+        private void MyViewport3D_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            Point p = e.MouseDevice.GetPosition(this);
+            if (e.Delta > 0 && zoomCurent < zoomMax)
+            {
+                scaleX = scale3D.ScaleX + 0.1;
+                scaleY = scale3D.ScaleY + 0.1;
+                scaleZ = scale3D.ScaleZ + 0.1;
+                zoomCurent++;
+                scale3D.ScaleX = scaleX;
+                scale3D.ScaleY = scaleY;
+                scale3D.ScaleZ = scaleZ;
+            }
+            else if (e.Delta <= 0 && zoomCurent > zoomMin)
+            {
+                scaleX = scale3D.ScaleX - 0.1;
+                scaleY = scale3D.ScaleY - 0.1;
+                scaleZ = scale3D.ScaleZ - 0.1;
+                zoomCurent--;
+                scale3D.ScaleX = scaleX;
+                scale3D.ScaleY = scaleY;
+                scale3D.ScaleZ = scaleZ;
+            }
+        }
+
+        private void MyViewport3D_MouseWheelDown(object sender, MouseButtonEventArgs e)
+        {
+            if (e.MiddleButton == MouseButtonState.Pressed)
+            {
+                mouseWheelDown = true;
+                MyViewport3D.CaptureMouse();
+                startPoint = e.GetPosition(mainWindow);
+                offsetPoint.X = translate3D.OffsetX;
+                offsetPoint.Y = translate3D.OffsetY;
+            }
+        }
+
         public static void ToLatLon(double utmX, double utmY, int zoneUTM, out double latitude, out double longitude)
         {
             bool isNorthHemisphere = true;
