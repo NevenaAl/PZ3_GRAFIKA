@@ -6,16 +6,16 @@
         xmlns:local="clr-namespace:_3DNetwork"
         mc:Ignorable="d"
         Title="3DMap" Height="450" Width="800" x:Name="mainWindow">
-    <Grid x:Name="MyGrid" Background="White">
+    <Grid x:Name="MyGrid" Background="#FF272424">
         <Viewport3D x:Name="MyViewport3D" MouseWheel="MyViewport3D_MouseWheel" MouseDown="MyViewport3D_MouseWheelDown" MouseUp="MyViewport3D_MouseUp" MouseLeftButtonDown="MyViewport3D_MouseLeftButtonDown" MouseLeave="MyViewport3D_MouseLeave" MouseMove="MyViewport3D_MouseMove">
             <Viewport3D.Camera>
-                <PerspectiveCamera Position = "1,0.8,4.5" LookDirection = "0,-0.6,-3"/>
+                <PerspectiveCamera Position = "1,0.8,4.5" LookDirection = "0,-0.6,-3" />
             </Viewport3D.Camera>
-
+            
             <ModelVisual3D x:Name="MyModelVisual3D">
                 <ModelVisual3D.Content>
                     <Model3DGroup x:Name="MyModel3DGroup">
-                        <AmbientLight Color = "White" />
+                        <DirectionalLight Color="White" Direction="0,-0.6,0"></DirectionalLight>
 
                         <GeometryModel3D>
                             <GeometryModel3D.Geometry>
